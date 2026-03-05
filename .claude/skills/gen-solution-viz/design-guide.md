@@ -16,16 +16,17 @@
 |  +---------------------------+  +---------------------+    |
 |                                  |    动画/可视化区域   |    |
 |                                  |    (右侧固定)       |    |
-+----------------------------------------------------------+
-|                    底部：键盘快捷键支持                      |
+|                                  +---------------------+    |
+|                                  | 快捷键 (动画下方)   |    |
 +----------------------------------------------------------+
 ```
 
 ### 关键约束
 - **页面高度固定**：使用 `vh` 单位，整体占满视口高度，不允许页面滚动
-- **左右分栏**：左侧代码区 40%，右侧可视化区 60%
+- **左右分栏**：左侧代码区 45%，右侧可视化区 55%
 - **右侧固定**：动画/可视化区域保持完全固定，不滚动
 - **参数输入区**：位于右侧可视化区最上方，支持用户自定义参数
+- **快捷键位置**：必须在动画/可视化区域的下方，页面最底部
 
 ## 2. CSS 变量定义
 
@@ -429,3 +430,47 @@ function runWithParams() {
 8. ✅ 参数输入区域显示在可视化区最上方
 9. ✅ 用户可自定义参数并实时更新动画
 10. ✅ 参数解析支持多种格式（数组、字符串、数字）
+
+## 12. 动态适配设计（重要）
+
+### 12.1 核心原则
+- 可视化元素必须根据容器大小动态调整
+- 禁止出现元素遮挡问题
+- 支持窗口 resize 时自动重新渲染
+
+### 12.2 数组动态适配
+```css
+/* 动态柱子宽度 */
+.bar {
+    width: 100%;
+    max-width: 60px;
+    min-width: 8px;
+    flex: 1;
+}
+```
+
+### 12.3 二叉树动态适配
+```javascript
+// 1. 动态计算节点间距
+const baseSpacingX = Math.max(30, 300 / treeWidth);
+const baseSpacingY = Math.max(50, 300 / treeDepth);
+
+// 2. 根据容器大小计算缩放
+const scaleX = Math.min(1, (width - padding * 2) / rangeX);
+const scaleY = Math.min(1, (height - padding * 2) / rangeY);
+const scale = Math.min(scaleX, scaleY, 1.2);
+
+// 3. 动态节点半径
+const nodeRadius = Math.max(12, Math.min(20, 18 * scale));
+
+// 4. 居中偏移
+const offsetX = (width - rangeX * scale) / 2 - minX * scale;
+const offsetY = (height - rangeY * scale) / 2;
+```
+
+### 12.4 窗口 resize 监听
+```javascript
+window.addEventListener('resize', () => {
+    renderTree(positions, visitedNodes, currentNode, resultNode);
+});
+```

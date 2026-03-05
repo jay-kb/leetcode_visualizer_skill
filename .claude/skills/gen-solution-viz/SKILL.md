@@ -39,11 +39,12 @@
   - **【重要】必须是独立可滚动窗口**：代码区域有独立的滚动条，可以手动拖动查看
   - **必须有代码高亮行移动（步骤指示器）**，随着步骤变化，当前执行的代码行要实时高亮显示
   - **高亮行自动滚动到中央**：随着步骤变化，当前执行的代码行**必须要实时高亮显示、并移动到窗口的中央**
-- **右侧**：分三部分 （必须有）
+- **右侧**：分四部分 （必须有）
   - **最上部：参数输入区域**（重要！支持用户自定义参数）
-  - 中部：功能控制按钮
-  - 下部：动画/可视化区域（完全固定，不滚动）
-- **底部**：键盘快捷键提示（必须有）
+  - 第二部分：功能控制按钮
+  - **第三部分：动画/可视化区域（核心，必须占满右侧剩余空间，使用 flex: 1）**
+  - **第四部分：键盘快捷键提示（必须在动画区域下方）**
+- **【重要】右侧面板必须占满页面**：可视化区域使用 `flex: 1` 和 `min-height: 0` 确保占满所有剩余空间
 
 ```
 +----------------------------------------------------------+
@@ -55,9 +56,9 @@
 |  |    [独立滚动条]           |  |    功能按钮区域     |   |
 |  +---------------------------+  +---------------------+   |
 |                                  |    动画/可视化区域   |    |
-|                                  |    (固定不动)       |    |
-+----------------------------------------------------------+
-|                    底部：键盘快捷键支持                      |
+|                                  |    (占满剩余空间)   |    |
+|                                  +---------------------+    |
+|                                  | 快捷键 (动画下方)   |    |
 +----------------------------------------------------------+
 ```
 
@@ -139,14 +140,29 @@
     overflow: auto;    /* 只有代码块内部可以滚动 */
 }
 
-/* 右侧面板 - 完全固定 */
+/* 右侧面板 - 完全固定，占满高度 */
 .right-panel {
     width: 55%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
     overflow: hidden;  /* 禁止滚动，保持固定 */
 }
 
+/* 可视化区域 - 占满剩余空间（关键！） */
 .visualization {
+    flex: 1;           /* 关键：占满右侧剩余空间 */
+    min-height: 0;     /* 允许 flex 子项收缩 */
     overflow: hidden;  /* 禁止滚动，动画区域保持不动 */
+    display: flex;
+    flex-direction: column;
+}
+
+/* 树/数组容器 - 占满可视化区域 */
+.tree-container {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
 }
 ```
 
@@ -320,6 +336,86 @@ function updateUI() {
 - 元素高亮/找到结果时使用 CSS transition
 - 平滑的过渡效果 (0.3s, cubic-bezier)
 - 当前处理元素的脉冲效果
+
+### 动态适配设计（重要）
+
+生成的 HTML 必须支持根据用户输入的参数动态适配可视化元素，确保不与其他元素产生遮挡。
+
+#### 数组动态适配
+```javascript
+// 根据数组长度动态计算柱子宽度
+const maxBarWidth = 60;
+const minBarWidth = 8;
+const containerWidth = container.clientWidth;
+const padding = 16;
+const availableWidth = containerWidth - padding * 2;
+const barWidth = Math.max(minBarWidth, Math.min(maxBarWidth, availableWidth / arr.length));
+const gap = Math.max(1, Math.min(4, 8 / arr.length));
+```
+
+#### 二叉树动态适配（关键实现）
+```javascript
+// 计算树的节点位置（动态适配）
+function calculatePositions(node, positions = [], level = 0, parentX = 0) {
+    if (!node) return;
+
+    const treeDepth = getDepth(node);
+    const treeWidth = Math.pow(2, treeDepth - 1);
+
+    // 动态计算节点间距，根据树的深度和宽度
+    const baseSpacingX = Math.max(30, 300 / treeWidth);  // 根据树的宽度动态调整
+    const baseSpacingY = Math.max(50, 300 / treeDepth);  // 根据树的深度动态调整
+
+    // ... 位置计算逻辑
+}
+
+// 渲染时动态缩放
+function renderTree(positions, visitedNodes, currentNode, resultNode) {
+    const container = document.getElementById('treeContainer');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    // 计算x和y的范围
+    let minX = Infinity, maxX = -Infinity, maxY = -Infinity;
+    positions.forEach(p => {
+        minX = Math.min(minX, p.x);
+        maxX = Math.max(maxX, p.x);
+        maxY = Math.max(maxY, p.y);
+    });
+
+    const rangeX = maxX - minX || 1;
+    const rangeY = maxY || 1;
+
+    // 动态计算缩放，确保完全适应容器
+    const padding = 40;
+    const scaleX = Math.min(1, (width - padding * 2) / rangeX);
+    const scaleY = Math.min(1, (height - padding * 2) / rangeY);
+    const scale = Math.min(scaleX, scaleY, 1.2);
+
+    // 节点半径根据缩放动态调整
+    const nodeRadius = Math.max(12, Math.min(20, 18 * scale));
+
+    // 居中偏移
+    const offsetX = (width - rangeX * scale) / 2 - minX * scale;
+    const offsetY = (height - rangeY * scale) / 2;
+
+    // 渲染节点和边，使用动态计算的参数
+}
+```
+
+#### 动态适配核心要点
+1. **容器尺寸检测**：每次渲染前获取容器的实际 `clientWidth` 和 `clientHeight`
+2. **元素范围计算**：遍历所有元素，计算 x/y 的 min/max 值
+3. **缩放比例计算**：`scale = Math.min((width - padding) / range, 1)`
+4. **居中偏移**：根据计算出的范围和缩放，计算居中偏移量
+5. **元素尺寸调整**：节点半径、柱子宽度等根据 scale 动态调整
+6. **窗口 resize 监听**：监听 `window.resize` 事件，容器大小时重新渲染
+
+#### 验证方法
+每次生成 HTML 后，必须测试：
+1. 输入最小参数（如 `[1]` 或 `[1]`）- 检查是否正常显示
+2. 输入大参数（如 20+ 元素的数组或深度 5+ 的树）- 检查是否有遮挡
+3. 调整浏览器窗口大小 - 检查是否自适应
 
 ### Step 4: 保存文件
 - 路径：`/Users/qinsx/project/AI/leetcode_visualizer/nginx/html/solutions/<title-slug>-<current-timestamp>.html`
