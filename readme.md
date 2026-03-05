@@ -1,4 +1,4 @@
-# CLAUDE.md
+# readme.md
 
 本文件为 Claude Code (claude.ai/code) 在本项目中工作提供指导。
 
