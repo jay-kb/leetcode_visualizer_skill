@@ -30,7 +30,61 @@
 - 响应式断点
 - **固定高度布局要求（重要：页面必须占满视口，不允许整体滚动）**
 
-### Step 3: 生成 HTML
+### Step 3: 格式化代码（重要！）
+
+**【关键】在生成 HTML 之前，必须对代码进行格式化处理！**
+
+从 leetcode.cn 获取的原始代码通常是未格式化的文本，缺少正确的缩进和空格。必须先进行格式化。
+
+#### 3.1 检测代码是否需要格式化
+
+检查原始代码是否存在以下问题：
+- 缺少正确的缩进（没有 4 空格缩进）
+- 运算符前后缺少空格（如 `for(int i=0;` 而不是 `for (int i = 0;`）
+- 代码行连在一起
+- 大括号风格不正确
+
+#### 3.2 格式化代码
+
+使用 AI 能力对代码进行格式化，要求：
+
+- **保持代码逻辑完全不变**
+- **使用 4 空格缩进**
+- **运算符前后添加空格**（如 `i=0` → `i = 0`，`a+b` → `a + b`）
+- **方法括号前不空格，括号后有空格**（如 `method(` 而非 `method (`）
+- **if/for/while 等语句括号内有空格**（如 `if(` → `if (`）
+- **大括号风格**：左大括号在行尾，右大括号单独一行
+- **逗号后必须有空格**
+- **添加适当的空行增加可读性**
+- **保留原有注释**
+
+#### 3.3 格式化 prompt 示例
+
+请使用以下 prompt 让 AI 格式化代码：
+
+```
+请将以下 Java 代码按照 Google Java Style 规范格式化，保持代码逻辑不变，只调整格式：
+
+[在此粘贴原始代码]
+
+要求：
+1. 使用 4 空格缩进
+2. 运算符前后加空格 (a+b → a + b)
+3. 方法调用括号前不加空格 (method( → method( )
+4. if/for/while 等语句括号内有空格 (if( → if ( )
+5. 大括号风格：左大括号在行尾，右大括号单独一行
+6. 逗号后加空格
+7. 适当添加空行增加可读性
+8. 保留原有注释
+```
+
+#### 3.4 格式化后的代码用于生成 HTML
+
+格式化后的代码将用于：
+1. 插入到 HTML 的 `<pre><code>` 标签中显示在左侧代码窗口
+2. 生成步骤对象时使用（用于代码高亮行对应）
+
+### Step 4: 生成 HTML
 生成的 HTML 必须遵循以下布局结构：
 
 **布局约束（重要）：**
@@ -417,9 +471,126 @@ function renderTree(positions, visitedNodes, currentNode, resultNode) {
 2. 输入大参数（如 20+ 元素的数组或深度 5+ 的树）- 检查是否有遮挡
 3. 调整浏览器窗口大小 - 检查是否自适应
 
-### Step 4: 保存文件
-- 路径：`/Users/qinsx/project/AI/leetcode_visualizer/nginx/html/solutions/<title-slug>-<current-timestamp>.html`
-- 确保目录存在
+### Step 5: 验证生成的 HTML（重要！）
+
+**每次生成 HTML 后，必须执行以下验证步骤，确保代码行对齐正确：**
+
+#### 5.1 验证代码行数匹配
+
+检查格式化后的代码行数与 steps 数组中的 codeLine 范围是否匹配：
+
+```javascript
+// 在生成 steps 后添加验证逻辑
+const codeLineCount = codeLines.length;  // 格式化后的代码总行数
+const maxCodeLine = Math.max(...steps.map(s => s.codeLine));  // steps 中最大的 codeLine
+const minCodeLine = Math.min(...steps.map(s => s.codeLine));  // steps 中最小的 codeLine
+
+if (maxCodeLine > codeLineCount) {
+    throw new Error(`代码行对齐错误: step 中最大的 codeLine (${maxCodeLine}) 超过了代码总行数 (${codeLineCount})`);
+}
+if (minCodeLine < 1) {
+    throw new Error(`代码行对齐错误: step 中最小的 codeLine (${minCodeLine}) 小于 1`);
+}
+```
+
+#### 5.2 验证每个代码行都有对应步骤
+
+确保代码的每一行都有对应的步骤（尤其是循环体内的代码）：
+
+```javascript
+// 检查关键代码行是否都有对应步骤
+const requiredLines = [];
+for (let i = 1; i <= codeLineCount; i++) {
+    const codeLineText = codeLines[i - 1].trim();
+    // 跳过空行
+    if (!codeLineText) continue;
+    // 跳过纯注释行
+    if (codeLineText.startsWith('//') || codeLineText.startsWith('/*')) continue;
+
+    const hasStep = steps.some(s => s.codeLine === i);
+    if (!hasStep) {
+        console.warn(`警告: 代码行 ${i} ("${codeLineText.substring(0, 30)}...") 没有对应的步骤`);
+    }
+}
+```
+
+#### 5.3 验证步骤的 codeLine 连续性
+
+确保步骤的 codeLine 按执行顺序合理递增：
+
+```javascript
+// 验证步骤顺序
+let lastCodeLine = 0;
+for (const step of steps) {
+    // codeLine 可以不变、递增或跳跃（循环），但不能倒退
+    if (step.codeLine < lastCodeLine && step.codeLine !== lastCodeLine) {
+        console.warn(`警告: codeLine 从 ${lastCodeLine} 倒退到 ${step.codeLine}，请检查步骤顺序`);
+    }
+    lastCodeLine = step.codeLine;
+}
+```
+
+#### 5.4 生成验证报告
+
+在 HTML 文件中添加注释，说明验证结果：
+
+```html
+<!--
+代码行对齐验证报告:
+- 代码总行数: X
+- 步骤总数: Y
+- codeLine 范围: 1 - Z
+- 验证状态: 通过/失败
+-->
+```
+
+#### 5.5 自动修复常见问题
+
+如果发现以下常见问题，自动进行修复：
+
+1. **codeLine 超出范围**: 将超出的 codeLine 调整到合理范围
+2. **缺少空行的步骤**: 为空行添加占位步骤
+3. **循环体步骤不完整**: 为每次循环迭代生成完整步骤
+
+#### 5.6 JavaScript 语法错误检查（重要！）
+
+**【必须检查】生成 HTML 后，必须确保 JavaScript 语法正确：**
+
+1. **动态键名语法错误（常见！）**：
+  - 错误写法：`{ 'dp[' + j + ']': maxVal }`
+  - 正确写法：
+    ```javascript
+    // 方案1：先定义变量
+    var key = 'dp[' + j + ']';
+    var variables = {};
+    variables[key] = maxVal;
+    steps.push({ variables: variables, ... });
+
+    // 方案2：使用计算属性
+    steps.push({
+        variables: {
+            [ 'dp[' + j + ']' ]: maxVal
+        },
+        ...
+    });
+    ```
+
+2. **在生成完 steps 后，运行以下检查**：
+   ```javascript
+   // 验证 steps 数组语法正确
+   try {
+       JSON.stringify(steps);
+       console.log('Steps 语法验证通过');
+   } catch (e) {
+       console.error('Steps 语法错误:', e.message);
+   }
+   ```
+
+3. **使用浏览器开发者工具控制台检查**：打开生成的 HTML，按 F12 查看控制台是否有语法错误
+
+### Step 6: 保存文件
+- 路径：`/Users/qinsx/project/AI/claude-skill/html/<title-slug>-<current-timestamp>.html`
+- 确保目录存在（首次使用需创建 html 文件夹）
 
 ## 示例 Prompt
 
@@ -430,6 +601,34 @@ function renderTree(positions, visitedNodes, currentNode, resultNode) {
 
 ## 输出格式
 
+### 验证清单（每次生成后必须检查）
+
+完成 HTML 生成后，必须向用户报告以下验证结果：
+
+```
+✅ 代码行对齐验证:
+   - 原始代码行数: X
+   - 格式化后代码行数: Y
+   - 步骤总数: Z
+   - codeLine 范围: 1 - N
+   - 验证状态: [通过/失败]
+
+✅ 布局验证:
+   - 顶部标题: [有/无]
+   - 左侧代码窗口: [有/无] (可滚动)
+   - 右侧参数输入: [有/无]
+   - 右侧可视化区域: [有/无]
+   - 快捷键提示: [有/无]
+
+✅ 功能验证:
+   - 步骤指示器: [有/无]
+   - 变量实时更新: [有/无]
+   - 高亮行自动滚动: [有/无]
+```
+
+### 告知用户
+
 完成后告知用户：
 1. 生成的文件路径
-2. 如何在页面中预览
+2. 验证报告
+3. 如何在页面中预览

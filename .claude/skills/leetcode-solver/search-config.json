@@ -1,0 +1,91 @@
+{
+  "description": "LeetCode 资源搜索配置文件",
+  "version": "2.0",
+
+  "搜索来源配置": {
+    "description": "设置要搜索的资源来源类型，优先推荐高质量来源",
+    "options": [
+      {
+        "type": "代码随想录",
+        "优先级": 1,
+        "description": "B站代码随想录，Carlsun-2，讲解详细深入",
+        "keywords": ["LeetCode {题号} {题目名称} 代码随想录", "{题目名称} 代码随想录 Java", "代码随想录 {题目名称}"],
+        "sites": ["programmercarl.com", "bilibili.com"],
+        "推荐理由": "代码随想录是B站最火的算法教程之一，讲解通俗易懂"
+      },
+      {
+        "type": "灵茶山艾府",
+        "优先级": 2,
+        "description": "B站灵茶山艾府(endlesscheng)，算法竞赛选手",
+        "keywords": ["LeetCode {题号} {题目名称} 灵茶山艾府", "{题目名称} endlesscheng", "灵茶山艾府 {题目名称}"],
+        "sites": ["bilibili.com", "leetcode.cn"],
+        "推荐理由": "灵茶山艾府是算法竞赛选手，提供高质量解题思路和优化技巧"
+      },
+      {
+        "type": "官方题解",
+        "优先级": 3,
+        "description": "LeetCode 官方题解",
+        "keywords": ["LeetCode {题号} solution", "{题目名称} solution Java", "LeetCode {题号} 官方题解"],
+        "sites": ["leetcode.cn"],
+        "推荐理由": "官方提供的最优解法，经过验证"
+      },
+      {
+        "type": "文章",
+        "keywords": ["{题号} {题目名称} Java 题解", "{题目名称} 算法 题解"],
+        "sites": ["juejin.cn", "zhihu.com", "blog.csdn.net", "leetcode.cn"]
+      },
+      {
+        "type": "视频",
+        "keywords": ["LeetCode {题号} {题目名称} Java 讲解", "{题目名称} 算法 教程"],
+        "sites": ["bilibili.com", "youtube.com"]
+      },
+      {
+        "type": "讨论区",
+        "keywords": ["LeetCode {题号} {题目名称} discuss", "{题目名称} 最佳解法"],
+        "sites": ["leetcode.cn/discuss", "github.com"]
+      }
+    ],
+
+    "enabled_types": ["代码随想录", "灵茶山艾府", "官方题解"],
+
+    "每种类型数量限制": 3
+  },
+
+  "默认配置示例": {
+    "description": "如果只想搜索部分来源，可以修改 enabled_types",
+    "minimal": ["官方题解"],
+    "standard": ["代码随想录", "官方题解"],
+    "recommended": ["代码随想录", "灵茶山艾府", "官方题解"],
+    "full": ["代码随想录", "灵茶山艾府", "官方题解", "文章", "视频", "讨论区"]
+  },
+
+  "高质量来源列表": {
+    "代码随想录": {
+      "B站": "https://space.bilibili.com/525438321",
+      "公众号": "代码随想录",
+      "网站": "https://programmercarl.com/",
+      "特点": "讲解详细，包含多种解法对比，适合系统学习"
+    },
+    "灵茶山艾府": {
+      "B站": "https://space.bilibili.com/206921",
+      "知乎": "https://www.zhihu.com/people/endlesscheng",
+      "特点": "算法竞赛选手视角，解法简洁有力，常有独到见解"
+    },
+    "Krahets": {
+      "LeetCode": "https://leetcode.cn/u/jyd/",
+      "B站": "https://space.bilibili.com/259913369",
+      "特点": "《画解算法》作者，图解详细直观"
+    },
+    "官方": {
+      "LeetCode CN": "https://leetcode.cn/",
+      "特点": "官方提供的最优解，经过验证"
+    }
+  },
+
+  "使用说明": {
+    "step1": "修改 enabled_types 数组，选择要搜索的资源类型",
+    "step2": "可以修改每个类型的 keywords 自定义搜索关键词",
+    "step3": "可以修改 sites 指定要搜索的网站",
+    "推荐配置": "强烈建议启用 ['代码随想录', '灵茶山艾府', '官方题解'] 以获得最佳学习体验"
+  }
+}
